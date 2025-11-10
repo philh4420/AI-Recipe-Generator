@@ -1,5 +1,4 @@
-import React, 'react';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthModal } from './AuthModal';
 import { signInWithEmailPassword, signUpWithEmailPassword } from '../services/authService';
 import { RecipeCard } from './RecipeCard';
