@@ -1,0 +1,5 @@
+{
+  "name": "AI Recipe Generator",
+  "description": "An AI-powered recipe generator that suggests recipes based on ingredients, dietary preferences, and cooking methods. Users receive tailored recipe suggestions with ingredients, instructions, and cooking times.",
+  "requestFramePermissions": []
+}
