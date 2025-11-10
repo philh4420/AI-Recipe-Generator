@@ -11,7 +11,7 @@ const App: React.FC = () => {
     const [generatedRecipes, setGeneratedRecipes] = useState<Recipe[]>([]);
     const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<React.ReactNode | null>(null);
     const [view, setView] = useState<'generator' | 'saved'>('generator');
 
     const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
@@ -46,7 +46,18 @@ const App: React.FC = () => {
             const result = await generateRecipes(formData);
             setGeneratedRecipes(result);
         } catch (err: any) {
-            setError(err.message || 'An unexpected error occurred.');
+            if (err.message === 'API_KEY environment variable not set') {
+                setError(
+                    <>
+                        The Gemini API key is not configured. Since you're deploying on Vercel, you need to add it to your project's Environment Variables. 
+                        Please follow <a href="https://vercel.com/docs/projects/environment-variables" target="_blank" rel="noopener noreferrer" className="underline font-medium hover:text-[--destructive]">Vercel's official guide</a> to set up your <code>API_KEY</code> correctly.
+                    </>
+                );
+            } else if (err.message === 'API key not valid') {
+                setError("Your API key is not valid. Please check it in your Vercel Environment Variables and try again.");
+            } else {
+                setError(err.message || 'An unexpected error occurred.');
+            }
         } finally {
             setIsLoading(false);
         }

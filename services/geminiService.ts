@@ -1,14 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import type { Recipe, FormData } from "../types";
 
-const API_KEY = process.env.API_KEY;
-
-if (!API_KEY) {
-  throw new Error("API_KEY environment variable not set");
-}
-
-const ai = new GoogleGenAI({ apiKey: API_KEY });
-
 const recipeSchema = {
   type: Type.OBJECT,
   properties: {
@@ -50,6 +42,13 @@ const recipeSchema = {
 
 
 export const generateRecipes = async (formData: FormData): Promise<Recipe[]> => {
+    const API_KEY = process.env.API_KEY;
+
+    if (!API_KEY) {
+      throw new Error("API_KEY environment variable not set");
+    }
+    const ai = new GoogleGenAI({ apiKey: API_KEY });
+    
     const { ingredients, diet, cuisine, cookingMethod } = formData;
     
     const prompt = `Generate a diverse list of at least 10 recipes based on the following criteria.
@@ -80,6 +79,9 @@ export const generateRecipes = async (formData: FormData): Promise<Recipe[]> => 
 
     } catch (error) {
         console.error("Error generating recipes:", error);
+        if (error instanceof Error && error.message.includes('API key not valid')) {
+            throw new Error("API key not valid");
+        }
         throw new Error("Failed to generate recipes. The model may be unable to create recipes with the specified combination.");
     }
 };

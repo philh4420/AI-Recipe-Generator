@@ -6,7 +6,7 @@ import { SkeletonLoader } from './SkeletonLoader';
 interface RecipeListProps {
     recipes: Recipe[];
     isLoading: boolean;
-    error: string | null;
+    error: React.ReactNode | null;
     onClear: () => void;
     onSave: (recipe: Recipe) => Promise<void>;
     savedRecipeIds: string[];
