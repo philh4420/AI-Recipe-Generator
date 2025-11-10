@@ -1,5 +1,6 @@
+
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Modality } from "@google/genai";
 
 export default async function handler(
   request: VercelRequest,
@@ -22,30 +23,43 @@ export default async function handler(
       return response.status(400).json({ error: "Prompt is required." });
     }
 
-    const imageResponse = await ai.models.generateImages({
-        model: 'imagen-4.0-generate-001',
-        prompt: prompt,
-        config: {
-          numberOfImages: 1,
-          outputMimeType: 'image/jpeg',
-          aspectRatio: '16:9',
-        },
+    const imageResponse = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: {
+        parts: [
+          {
+            text: prompt,
+          },
+        ],
+      },
+      config: {
+          responseModalities: [Modality.IMAGE],
+      },
     });
 
-    if (imageResponse.generatedImages && imageResponse.generatedImages.length > 0) {
-      const base64ImageBytes: string = imageResponse.generatedImages[0].image.imageBytes;
-      const imageUrl = `data:image/jpeg;base64,${base64ImageBytes}`;
-      return response.status(200).json({ imageUrl });
-    } else {
-      throw new Error("No image was generated.");
+    // Loop through parts to find the image data
+    for (const part of imageResponse.candidates[0].content.parts) {
+      if (part.inlineData) {
+        const base64ImageBytes: string = part.inlineData.data;
+        const mimeType = part.inlineData.mimeType;
+        const imageUrl = `data:${mimeType};base64,${base64ImageBytes}`;
+        return response.status(200).json({ imageUrl });
+      }
     }
+    
+    // If loop completes without finding an image
+    throw new Error("No image data was found in the AI response.");
 
   } catch (error: any) {
     console.error("Error in /api/generateImage:", error);
     let detailedError = "An error occurred while generating the image.";
-    if (error.message) {
+
+    if (error.response && error.response.data && error.response.data.error) {
+        detailedError = `Gemini API Error: ${error.response.data.error.message}`;
+    } else if (error.message) {
         detailedError = error.message;
     }
+    
     return response.status(500).json({ error: detailedError });
   }
 }
