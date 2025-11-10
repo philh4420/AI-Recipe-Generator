@@ -63,6 +63,33 @@
       .animate-fade-in {
         animation: fade-in 0.5s ease-out forwards;
       }
+
+      @media print {
+        body > * {
+            visibility: hidden;
+        }
+        .printing-container, .printing-container * {
+            visibility: visible;
+        }
+        .printing-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0;
+            padding: 1rem;
+            box-shadow: none !important;
+            background: none !important;
+            border: none !important;
+        }
+        .printing-container .no-print {
+            display: none !important;
+        }
+        .printing-container * {
+            color: #000 !important;
+            background: none !important;
+        }
+      }
     </style>
     <script type="importmap">
 {
