@@ -38,14 +38,6 @@ const CopyIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     </svg>
 );
 
-const PlateIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1} {...props}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12a10.5 10.5 0 0110.5-10.5c.321 0 .639.023.95.067 2.923.41 5.485 2.298 6.64 4.968.12.28.232.568.336.861 2.05 5.922-1.39 12.322-7.313 14.372-5.922 2.05-12.322-1.39-14.372-7.313A10.463 10.463 0 012.25 12z" />
-    </svg>
-);
-
-
 const Section: React.FC<{ title: string; children: React.ReactNode; extra?: React.ReactNode }> = ({ title, children, extra }) => (
     <div>
         <div className="flex justify-between items-center mb-3">
@@ -118,13 +110,6 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onSave, onDelete
 
     return (
         <article ref={cardRef} className="bg-[--card] border border-[--border] rounded-2xl shadow-lg flex flex-col overflow-hidden" aria-labelledby={titleId}>
-            {recipe.imageUrl ? (
-                <img src={recipe.imageUrl} alt={`A generated image of ${recipe.recipeName}`} className="w-full h-56 object-cover" />
-            ) : (
-                <div className="w-full h-56 bg-[--muted] flex items-center justify-center">
-                    <PlateIcon className="h-24 w-24 text-[--muted-foreground]/30" />
-                </div>
-            )}
             <div className='p-8 flex-grow'>
                 <h2 id={titleId} className="text-2xl font-bold text-[--foreground] mb-2">{recipe.recipeName}</h2>
                 <p className="text-[--muted-foreground] mb-6">{recipe.description}</p>

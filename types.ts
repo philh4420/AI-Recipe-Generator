@@ -8,7 +8,6 @@ export interface Recipe {
   cookTime: string;
   ingredients: string[];
   instructions: string[];
-  imageUrl?: string;
 }
 
 export interface InputFormProps {

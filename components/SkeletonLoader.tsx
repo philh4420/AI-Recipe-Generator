@@ -6,7 +6,6 @@ const SkeletonBar: React.FC<{ width: string; height?: string }> = ({ width, heig
 
 const SkeletonCard: React.FC = () => (
      <div className="bg-[--card] border border-[--border] rounded-2xl shadow-lg w-full overflow-hidden">
-        <div className="bg-[--muted] h-56 w-full"></div>
         <div className="p-8">
             <SkeletonBar width="w-3/4" height="h-7" />
             <div className="mt-4 space-y-2">
