@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { generateRecipes } from './services/geminiService';
+import { generateRecipes, generateRecipeImage } from './services/geminiService';
 import { addRecipe, deleteRecipe, getRecipes } from './services/firestoreService';
 import { onAuthStateChange, signInWithGoogle, signOutUser } from './services/authService';
 import type { Recipe, FormData, FirebaseUser } from './types';
@@ -63,8 +63,23 @@ const App: React.FC = () => {
         setError(null);
         setGeneratedRecipes([]);
         try {
-            const result = await generateRecipes(formData);
-            setGeneratedRecipes(result);
+            const recipesWithoutImages = await generateRecipes(formData);
+
+            const recipesWithImages = await Promise.all(
+                recipesWithoutImages.map(async (recipe) => {
+                    try {
+                        const imagePrompt = `A delicious, professional food photograph of ${recipe.recipeName}, ${recipe.description}`;
+                        const imageData = await generateRecipeImage(imagePrompt);
+                        return { ...recipe, imageUrl: imageData.imageUrl };
+                    } catch (imgErr) {
+                        console.error(`Failed to generate image for ${recipe.recipeName}:`, imgErr);
+                        // Return recipe without image on failure so the app doesn't break
+                        return recipe; 
+                    }
+                })
+            );
+
+            setGeneratedRecipes(recipesWithImages);
         } catch (err: any) {
             let errorMessage = 'An unexpected error occurred.';
             if (err.message) {
