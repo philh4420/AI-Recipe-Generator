@@ -47,7 +47,30 @@ const App: React.FC = () => {
             const result = await generateRecipes(formData);
             setGeneratedRecipes(result);
         } catch (err: any) {
-            setError(err.message || 'An unexpected error occurred.');
+            let errorMessage = 'An unexpected error occurred.';
+            if (err.message) {
+                try {
+                    // The error from the backend is often a stringified JSON object from the Gemini API.
+                    const errorData = JSON.parse(err.message);
+                    const apiError = errorData.error;
+
+                    if (apiError && apiError.message) {
+                        if (apiError.code === 503 || apiError.status === 'UNAVAILABLE') {
+                            errorMessage = "The AI model is currently overloaded with requests. This is a temporary issue. Please wait a moment and try again.";
+                        } else {
+                            // Display other specific API errors
+                            errorMessage = `API Error: ${apiError.message}`;
+                        }
+                    } else {
+                        // It's a JSON but not in the expected format.
+                        errorMessage = err.message;
+                    }
+                } catch (e) {
+                    // It's not a JSON string, so just use the raw message.
+                    errorMessage = err.message;
+                }
+            }
+            setError(errorMessage);
         } finally {
             setIsLoading(false);
         }
