@@ -99,9 +99,10 @@ interface RecipeCardProps {
     isDemo?: boolean;
     onModify?: (recipe: Recipe, modification: string) => void;
     onStartCooking?: (recipe: Recipe) => void;
+    onRecipeUpdate?: (updatedRecipe: Recipe) => void;
 }
 
-export const RecipeCard: React.FC<RecipeCardProps> = ({ user, recipe, onSave, onDelete, onShare, isSaved, isSavedView, isPublicView, isDemo, onModify, onStartCooking }) => {
+export const RecipeCard: React.FC<RecipeCardProps> = ({ user, recipe, onSave, onDelete, onShare, isSaved, isSavedView, isPublicView, isDemo, onModify, onStartCooking, onRecipeUpdate }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [justSaved, setJustSaved] = useState(false);
     const [showReviews, setShowReviews] = useState(false);
@@ -174,20 +175,29 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ user, recipe, onSave, on
     };
 
     const handleReviewAdded = (newReview: Omit<Review, 'id' | 'createdAt'>) => {
-        // Optimistically update the UI
-        setCurrentRecipe(prev => {
-            const oldTotalRating = (prev.avgRating || 0) * (prev.ratingCount || 0);
-            const newRatingCount = (prev.ratingCount || 0) + 1;
-            const newAvgRating = (oldTotalRating + newReview.rating) / newRatingCount;
-            const newReviews = [{...newReview, id: 'temp', createdAt: new Date().toISOString()}, ...(prev.reviews || [])];
-            
-            return {
-                ...prev,
-                ratingCount: newRatingCount,
-                avgRating: newAvgRating,
-                reviews: newReviews,
-            };
-        });
+        const oldRecipe = currentRecipe;
+        const oldTotalRating = (oldRecipe.avgRating || 0) * (oldRecipe.ratingCount || 0);
+        const newRatingCount = (oldRecipe.ratingCount || 0) + 1;
+        const newAvgRating = (oldTotalRating + newReview.rating) / newRatingCount;
+        const newReviews = [
+            { ...newReview, id: `temp-${Date.now()}`, createdAt: new Date().toISOString() }, 
+            ...(oldRecipe.reviews || [])
+        ];
+
+        const updatedRecipe: Recipe = {
+            ...oldRecipe,
+            ratingCount: newRatingCount,
+            avgRating: newAvgRating,
+            reviews: newReviews,
+        };
+
+        // Optimistically update the local UI for instant feedback
+        setCurrentRecipe(updatedRecipe);
+        
+        // Propagate the update to the parent component to keep the main app state in sync
+        if (onRecipeUpdate) {
+            onRecipeUpdate(updatedRecipe);
+        }
     };
 
     return (

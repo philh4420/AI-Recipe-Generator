@@ -247,6 +247,14 @@ const App: React.FC = () => {
         }
     };
 
+    const handleRecipeUpdate = (updatedRecipe: Recipe) => {
+        setSavedRecipes(prevRecipes =>
+            prevRecipes.map(recipe =>
+                recipe.id === updatedRecipe.id ? updatedRecipe : recipe
+            )
+        );
+    };
+
     const handleShareRecipe = (recipe: Recipe): string => {
         if (!user) {
             addToast({ message: "You must be signed in to share.", type: "error" });
@@ -430,7 +438,7 @@ const App: React.FC = () => {
                     </>
                 );
             case 'saved':
-                return <SavedRecipes user={user} recipes={savedRecipes} onDelete={handleDeleteRecipe} onShare={handleShareRecipe} onStartCooking={handleStartCooking} />;
+                return <SavedRecipes user={user} recipes={savedRecipes} onDelete={handleDeleteRecipe} onShare={handleShareRecipe} onStartCooking={handleStartCooking} onRecipeUpdate={handleRecipeUpdate} />;
             case 'pantry':
                 return <Pantry items={pantryItems} onAddItem={handleAddPantryItem} onDeleteItem={handleDeletePantryItem} />;
             case 'shoppingList':
