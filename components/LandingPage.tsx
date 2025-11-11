@@ -288,19 +288,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSignInWithGoogle, is
                  <Section>
                     <AnimatedDiv>
                         <SectionTitle>Endless Culinary Possibilities</SectionTitle>
-                        <div className="max-w-4xl mx-auto text-center">
+                        <div className="max-w-5xl mx-auto text-center">
                             <p className="mb-8 text-[--muted-foreground]">Tailor every search to your exact needs with our powerful filters.</p>
-                            <div className="space-y-4">
+                            <div className="space-y-6">
+                                <div>
+                                    <h4 className="font-semibold mb-3">Meal Type</h4>
+                                    <div className="flex flex-wrap justify-center gap-2">
+                                        {['Breakfast', 'Lunch', 'Dinner', 'Dessert', 'Snack', 'Appetizer', 'Brunch'].map(tag => <span key={tag} className="bg-[--muted] text-[--muted-foreground] text-sm px-3 py-1 rounded-full">{tag}</span>)}
+                                    </div>
+                                </div>
                                 <div>
                                     <h4 className="font-semibold mb-3">Dietary Needs</h4>
                                     <div className="flex flex-wrap justify-center gap-2">
-                                        {['Vegan', 'Gluten-Free', 'Keto', 'Paleo', 'Vegetarian', 'Pescatarian'].map(tag => <span key={tag} className="bg-[--muted] text-[--muted-foreground] text-sm px-3 py-1 rounded-full">{tag}</span>)}
+                                        {['Vegan', 'Gluten-Free', 'Keto', 'Vegetarian', 'Pescatarian', 'Dairy-Free', 'Low-Carb', 'Nut-Free'].map(tag => <span key={tag} className="bg-[--muted] text-[--muted-foreground] text-sm px-3 py-1 rounded-full">{tag}</span>)}
                                     </div>
                                 </div>
                                  <div>
                                     <h4 className="font-semibold mb-3">Cuisine Types</h4>
                                     <div className="flex flex-wrap justify-center gap-2">
-                                        {['Italian', 'Mexican', 'Japanese', 'Indian', 'Thai', 'French', 'Chinese'].map(tag => <span key={tag} className="bg-[--muted] text-[--muted-foreground] text-sm px-3 py-1 rounded-full">{tag}</span>)}
+                                        {['Italian', 'Mexican', 'Japanese', 'Indian', 'Thai', 'French', 'Chinese', 'Caribbean', 'Greek', 'Vietnamese', 'Southern (US)'].map(tag => <span key={tag} className="bg-[--muted] text-[--muted-foreground] text-sm px-3 py-1 rounded-full">{tag}</span>)}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 className="font-semibold mb-3">Cooking Method</h4>
+                                    <div className="flex flex-wrap justify-center gap-2">
+                                        {['Air-Fry', 'Slow-Cook', 'Grill', 'Bake', 'Stir-Fry', 'Pressure-Cook', 'Roast', 'Sauté'].map(tag => <span key={tag} className="bg-[--muted] text-[--muted-foreground] text-sm px-3 py-1 rounded-full">{tag}</span>)}
                                     </div>
                                 </div>
                             </div>
