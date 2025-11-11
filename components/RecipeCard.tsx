@@ -48,7 +48,7 @@ const ChefHatIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
 
 const ShareIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12s-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6.002l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.367a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12s-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6.002l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.367a3 3 0 105.367 2.684 3 3 0 00-5.367 2.684z" />
   </svg>
 );
 
@@ -67,8 +67,7 @@ interface RecipeCardProps {
     recipe: Recipe;
     onSave?: (recipe: Recipe) => Promise<void>;
     onDelete?: (recipe: Recipe) => Promise<void>;
-    onShare?: (recipe: Recipe) => Promise<string>;
-    onUnshare?: (recipe: Recipe) => Promise<void>;
+    onShare?: (recipe: Recipe) => string;
     isSaved?: boolean;
     isSavedView?: boolean;
     isPublicView?: boolean;
@@ -77,80 +76,10 @@ interface RecipeCardProps {
     onStartCooking?: (recipe: Recipe) => void;
 }
 
-const SharePopover: React.FC<{
-    recipe: Recipe;
-    onShare: () => Promise<string>;
-    onUnshare: () => Promise<void>;
-    onClose: () => void;
-}> = ({ recipe, onShare, onUnshare, onClose }) => {
-    const [isSharing, setIsSharing] = useState(false);
-    const [shareLink, setShareLink] = useState(recipe.isPublic ? `${window.location.origin}?recipe=${recipe.publicId}` : '');
-    const { addToast } = useToast();
-    const popoverRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
-                onClose();
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [onClose]);
-
-    const handleToggle = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        setIsSharing(true);
-        try {
-            if (e.target.checked) {
-                const link = await onShare();
-                setShareLink(link);
-            } else {
-                await onUnshare();
-                setShareLink('');
-            }
-        } finally {
-            setIsSharing(false);
-        }
-    };
-
-    const handleCopy = () => {
-        navigator.clipboard.writeText(shareLink)
-            .then(() => addToast({ message: 'Link copied!', type: 'success' }))
-            .catch(() => addToast({ message: 'Failed to copy link.', type: 'error' }));
-    };
-
-    return (
-        <div ref={popoverRef} className="absolute right-0 bottom-full mb-2 w-72 bg-[--popover] border border-[--border] rounded-lg shadow-xl p-4 z-10 animate-fade-in">
-            <div className="flex justify-between items-center pb-2 border-b border-[--border]">
-                <p className="text-sm font-semibold">Share Recipe</p>
-                <div className="flex items-center space-x-2">
-                    {isSharing && <svg className="animate-spin h-4 w-4 text-[--primary]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>}
-                    <label htmlFor="share-toggle" className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="share-toggle" className="sr-only peer" checked={recipe.isPublic} onChange={handleToggle} disabled={isSharing} />
-                        <div className="w-9 h-5 bg-[--muted] rounded-full peer peer-focus:ring-2 peer-focus:ring-[--ring] peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[--primary]"></div>
-                    </label>
-                </div>
-            </div>
-            {recipe.isPublic ? (
-                <div className="mt-3">
-                    <p className="text-xs text-[--muted-foreground] mb-1">Anyone with this link can view this recipe.</p>
-                    <div className="flex items-center gap-2">
-                        <input type="text" readOnly value={shareLink} className="w-full text-xs bg-[--input] border border-[--border] rounded-md px-2 py-1" />
-                        <button onClick={handleCopy} className="p-1.5 rounded-md hover:bg-[--muted]"><CopyIcon className="h-4 w-4" /></button>
-                    </div>
-                </div>
-            ) : (
-                 <p className="text-xs text-center text-[--muted-foreground] mt-3">Enable sharing to get a public link.</p>
-            )}
-        </div>
-    );
-};
-
-export const RecipeCard: React.FC<RecipeCardProps> = ({ user, recipe, onSave, onDelete, onShare, onUnshare, isSaved, isSavedView, isPublicView, isDemo, onModify, onStartCooking }) => {
+export const RecipeCard: React.FC<RecipeCardProps> = ({ user, recipe, onSave, onDelete, onShare, isSaved, isSavedView, isPublicView, isDemo, onModify, onStartCooking }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [justSaved, setJustSaved] = useState(false);
     const [showReviews, setShowReviews] = useState(false);
-    const [showSharePopover, setShowSharePopover] = useState(false);
     const [currentRecipe, setCurrentRecipe] = useState(recipe); // Local state for optimistic updates
     const cardRef = useRef<HTMLDivElement>(null);
     const titleId = useId();
@@ -173,6 +102,17 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ user, recipe, onSave, on
     const handleDelete = async () => {
         if (onDelete) {
             await onDelete(currentRecipe);
+        }
+    };
+    
+    const handleShare = () => {
+        if (onShare) {
+            const shareUrl = onShare(currentRecipe);
+            if (shareUrl) {
+                navigator.clipboard.writeText(shareUrl)
+                    .then(() => addToast({ message: 'Share link copied!', type: 'success' }))
+                    .catch(() => addToast({ message: 'Failed to copy link.', type: 'error' }));
+            }
         }
     };
 
@@ -230,11 +170,6 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ user, recipe, onSave, on
             <div className='p-8 flex-grow'>
                 <div className="flex justify-between items-start">
                     <h2 id={titleId} className="text-2xl font-bold text-[--foreground] mb-2 pr-4">{currentRecipe.recipeName}</h2>
-                    {isSavedView && recipe.isPublic && (
-                        <div className="flex-shrink-0 bg-[--primary]/10 text-[--primary] text-xs font-bold px-2 py-1 rounded-full">
-                            PUBLIC
-                        </div>
-                    )}
                 </div>
                 {isPublicView && currentRecipe.ownerName && (
                     <p className="text-sm text-[--muted-foreground] mb-4">Shared by {currentRecipe.ownerName}</p>
@@ -325,15 +260,12 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ user, recipe, onSave, on
                         </button>
                      )}
                      <div className="hidden sm:block border-l border-[--border] h-6 mx-2"></div>
-                    {isSavedView && onDelete && onShare && onUnshare ? (
+                    {isSavedView && onDelete && onShare ? (
                         <>
-                        <div className="relative">
-                            <button onClick={() => setShowSharePopover(!showSharePopover)} className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold text-[--muted-foreground] bg-transparent hover:bg-[--muted] hover:text-[--foreground] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--ring] focus:ring-offset-[--card] transition-colors">
-                                <ShareIcon className="h-4 w-4" aria-hidden="true" />
-                                <span>Share</span>
-                            </button>
-                             {showSharePopover && <SharePopover recipe={currentRecipe} onShare={() => onShare(currentRecipe)} onUnshare={() => onUnshare(currentRecipe)} onClose={() => setShowSharePopover(false)} />}
-                        </div>
+                        <button onClick={handleShare} className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold text-[--muted-foreground] bg-transparent hover:bg-[--muted] hover:text-[--foreground] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--ring] focus:ring-offset-[--card] transition-colors">
+                            <ShareIcon className="h-4 w-4" aria-hidden="true" />
+                            <span>Share</span>
+                        </button>
                         <button onClick={handleDelete} className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold text-[--destructive] bg-transparent hover:bg-[--destructive]/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--destructive] focus:ring-offset-[--card] transition-colors">
                             <TrashIcon className="h-4 w-4" aria-hidden="true" />
                             <span>Delete</span>

@@ -6,7 +6,6 @@ import {
     getShoppingListItems, addShoppingListItems, updateShoppingListItem, deleteShoppingListItems,
     getMealPlan, updateMealPlan,
     getTasteProfile, updateTasteProfile,
-    shareRecipe, unshareRecipe, getPublicRecipe
 } from './services/firestoreService';
 import { onAuthStateChange, signInWithGoogle, signOutUser } from './services/authService';
 import type { Recipe, FormData, FirebaseUser, PantryItem, ShoppingListItem, View, MealPlan, PlannedRecipe, TasteProfile } from './types';
@@ -58,23 +57,20 @@ const App: React.FC = () => {
     // Check for public recipe link on initial load
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
-        const publicId = urlParams.get('recipe');
+        const recipeData = urlParams.get('recipeData');
 
-        if (publicId) {
-            getPublicRecipe(publicId)
-                .then(recipe => {
-                    if (recipe) {
-                        setPublicRecipe(recipe);
-                    } else {
-                        setPublicViewError("Sorry, we couldn't find that recipe. The link may have expired or been removed.");
-                    }
-                })
-                .catch(err => {
-                    setPublicViewError("There was an error loading the recipe. Please try again later.");
-                })
-                .finally(() => {
-                    setIsPublicViewLoading(false);
-                });
+        if (recipeData) {
+            try {
+                // Decode from URL component, then from Base64
+                const decodedJson = atob(decodeURIComponent(recipeData));
+                const recipe = JSON.parse(decodedJson);
+                setPublicRecipe(recipe);
+            } catch (err) {
+                console.error("Failed to parse shared recipe data:", err);
+                setPublicViewError("The shared recipe link appears to be invalid or corrupted.");
+            } finally {
+                setIsPublicViewLoading(false);
+            }
         } else {
             setIsPublicViewLoading(false);
         }
@@ -243,9 +239,6 @@ const App: React.FC = () => {
     const handleDeleteRecipe = async (recipe: Recipe) => {
         if (!user || !recipe.id) return;
         try {
-            if (recipe.isPublic) {
-                await unshareRecipe(user.uid, recipe);
-            }
             await deleteRecipe(user.uid, recipe.id);
             setSavedRecipes(prev => prev.filter(r => r.id !== recipe.id));
             addToast({ message: 'Recipe removed from your cookbook.', type: 'success' });
@@ -254,28 +247,25 @@ const App: React.FC = () => {
         }
     };
 
-    const handleShareRecipe = async (recipe: Recipe): Promise<string> => {
-        if (!user) throw new Error("User not signed in.");
-        try {
-            const publicId = await shareRecipe(user.uid, user.displayName || 'A Chef', recipe);
-            setSavedRecipes(prev => prev.map(r => r.id === recipe.id ? { ...r, isPublic: true, publicId } : r));
-            addToast({ message: "Recipe is now public!", type: "success" });
-            return `${window.location.origin}?recipe=${publicId}`;
-        } catch (err) {
-            addToast({ message: 'Failed to share recipe.', type: 'error' });
-            throw err;
+    const handleShareRecipe = (recipe: Recipe): string => {
+        if (!user) {
+            addToast({ message: "You must be signed in to share.", type: "error" });
+            return "";
         }
-    };
-
-    const handleUnshareRecipe = async (recipe: Recipe): Promise<void> => {
-        if (!user) throw new Error("User not signed in.");
         try {
-            await unshareRecipe(user.uid, recipe);
-            setSavedRecipes(prev => prev.map(r => r.id === recipe.id ? { ...r, isPublic: false, publicId: undefined } : r));
-            addToast({ message: "Recipe is now private.", type: "success" });
+            const shareableRecipe = {
+                ...recipe,
+                ownerId: user.uid,
+                ownerName: user.displayName || 'A Chef'
+            };
+            const jsonString = JSON.stringify(shareableRecipe);
+            const encodedData = btoa(jsonString); // Base64 encode
+            const url = `${window.location.origin}?recipeData=${encodeURIComponent(encodedData)}`;
+            return url;
         } catch (err) {
-            addToast({ message: 'Failed to unshare recipe.', type: 'error' });
-            throw err;
+            console.error("Error creating share link:", err);
+            addToast({ message: 'Could not create share link.', type: 'error' });
+            return "";
         }
     };
 
@@ -440,7 +430,7 @@ const App: React.FC = () => {
                     </>
                 );
             case 'saved':
-                return <SavedRecipes user={user} recipes={savedRecipes} onDelete={handleDeleteRecipe} onShare={handleShareRecipe} onUnshare={handleUnshareRecipe} onStartCooking={handleStartCooking} />;
+                return <SavedRecipes user={user} recipes={savedRecipes} onDelete={handleDeleteRecipe} onShare={handleShareRecipe} onStartCooking={handleStartCooking} />;
             case 'pantry':
                 return <Pantry items={pantryItems} onAddItem={handleAddPantryItem} onDeleteItem={handleDeletePantryItem} />;
             case 'shoppingList':

@@ -7,8 +7,7 @@ interface SavedRecipesProps {
     onDelete: (recipe: Recipe) => Promise<void>;
     onStartCooking: (recipe: Recipe) => void;
     user: FirebaseUser | null;
-    onShare: (recipe: Recipe) => Promise<string>;
-    onUnshare: (recipe: Recipe) => Promise<void>;
+    onShare: (recipe: Recipe) => string;
 }
 
 const BookmarkIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -55,7 +54,7 @@ const FilterControls: React.FC<{
 };
 
 
-export const SavedRecipes: React.FC<SavedRecipesProps> = ({ recipes, onDelete, onStartCooking, user, onShare, onUnshare }) => {
+export const SavedRecipes: React.FC<SavedRecipesProps> = ({ recipes, onDelete, onStartCooking, user, onShare }) => {
     const [sortOrder, setSortOrder] = useState('name_asc');
     const [cuisineFilter, setCuisineFilter] = useState('All Cuisines');
 
@@ -122,7 +121,6 @@ export const SavedRecipes: React.FC<SavedRecipesProps> = ({ recipes, onDelete, o
                                 recipe={recipe} 
                                 onDelete={onDelete}
                                 onShare={onShare}
-                                onUnshare={onUnshare}
                                 isSavedView={true}
                                 onStartCooking={onStartCooking}
                             />
