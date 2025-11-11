@@ -5,6 +5,7 @@ import { RecipeCard } from './RecipeCard';
 interface SavedRecipesProps {
     recipes: Recipe[];
     onDelete: (id: string) => Promise<void>;
+    onStartCooking: (recipe: Recipe) => void;
 }
 
 const BookmarkIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -51,7 +52,7 @@ const FilterControls: React.FC<{
 };
 
 
-export const SavedRecipes: React.FC<SavedRecipesProps> = ({ recipes, onDelete }) => {
+export const SavedRecipes: React.FC<SavedRecipesProps> = ({ recipes, onDelete, onStartCooking }) => {
     const [sortOrder, setSortOrder] = useState('name_asc');
     const [cuisineFilter, setCuisineFilter] = useState('All Cuisines');
 
@@ -117,6 +118,7 @@ export const SavedRecipes: React.FC<SavedRecipesProps> = ({ recipes, onDelete })
                                 recipe={recipe} 
                                 onDelete={onDelete}
                                 isSavedView={true}
+                                onStartCooking={onStartCooking}
                             />
                         </div>
                     ))}

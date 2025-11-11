@@ -13,6 +13,7 @@ interface RecipeListProps {
     onRetry: () => void;
     onModify: (recipe: Recipe, modification: string, index: number) => void;
     modifyingRecipeIndex: number | null;
+    onStartCooking: (recipe: Recipe) => void;
 }
 
 const ChefIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -27,7 +28,7 @@ const ErrorIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     </svg>
 );
 
-export const RecipeList: React.FC<RecipeListProps> = ({ recipes, isLoading, error, onClear, onSave, savedRecipeIds, onRetry, onModify, modifyingRecipeIndex }) => {
+export const RecipeList: React.FC<RecipeListProps> = ({ recipes, isLoading, error, onClear, onSave, savedRecipeIds, onRetry, onModify, modifyingRecipeIndex, onStartCooking }) => {
     
     if (isLoading) {
         return <div className="mt-12"><SkeletonLoader /></div>;
@@ -74,6 +75,7 @@ export const RecipeList: React.FC<RecipeListProps> = ({ recipes, isLoading, erro
                                     onSave={onSave}
                                     isSaved={savedRecipeIds.includes(recipe.recipeName)}
                                     onModify={(recipe, modification) => onModify(recipe, modification, index)}
+                                    onStartCooking={onStartCooking}
                                 />
                              )}
                         </div>

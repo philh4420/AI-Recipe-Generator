@@ -9,6 +9,7 @@ import { RecipeList } from './components/RecipeList';
 import { SavedRecipes } from './components/SavedRecipes';
 import { LandingPage } from './components/LandingPage';
 import { Footer } from './components/Footer';
+import { CookingMode } from './components/CookingMode';
 import { useToast } from './hooks/useToast';
 
 const App: React.FC = () => {
@@ -21,6 +22,7 @@ const App: React.FC = () => {
     const [error, setError] = useState<React.ReactNode | null>(null);
     const [view, setView] = useState<'generator' | 'saved'>('generator');
     const [lastFormData, setLastFormData] = useState<FormData | null>(null);
+    const [cookingRecipe, setCookingRecipe] = useState<Recipe | null>(null);
 
     const [isDarkMode, setIsDarkMode] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -158,6 +160,9 @@ const App: React.FC = () => {
     };
 
     const handleClear = () => setGeneratedRecipes([]);
+
+    const handleStartCooking = (recipe: Recipe) => setCookingRecipe(recipe);
+    const handleCloseCookingMode = () => setCookingRecipe(null);
     
     const handleGoogleSignIn = async () => {
         try {
@@ -222,16 +227,21 @@ const App: React.FC = () => {
                             onRetry={handleRetry}
                             onModify={handleModifyRecipe}
                             modifyingRecipeIndex={modifyingRecipeIndex}
+                            onStartCooking={handleStartCooking}
                         />
                     </>
                 ) : (
                     <SavedRecipes 
                         recipes={savedRecipes}
                         onDelete={handleDeleteRecipe}
+                        onStartCooking={handleStartCooking}
                     />
                 )}
             </main>
             <Footer />
+            {cookingRecipe && (
+                <CookingMode recipe={cookingRecipe} onClose={handleCloseCookingMode} />
+            )}
         </div>
     );
 };

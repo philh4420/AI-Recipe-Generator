@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { AuthModal } from './AuthModal';
 import { RecipeCard } from './RecipeCard';
 import { Footer } from './Footer';
+import { CookingMode } from './CookingMode';
 import { signInWithEmailPassword, signUpWithEmailPassword } from '../services/authService';
 import type { AuthCredentials, Recipe } from '../types';
 
@@ -110,6 +111,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSignInWithGoogle, is
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
     const [authModalView, setAuthModalView] = useState<'login' | 'signup'>('signup');
     const [showDemo, setShowDemo] = useState(false);
+    const [showCookingMode, setShowCookingMode] = useState(false);
     const [isHeaderSticky, setIsHeaderSticky] = useState(false);
 
     const openAuthModal = (view: 'login' | 'signup') => {
@@ -211,7 +213,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSignInWithGoogle, is
                                         Close Example
                                     </button>
                                 </div>
-                                <RecipeCard recipe={demoRecipe} isDemo={true} />
+                                <RecipeCard 
+                                    recipe={demoRecipe} 
+                                    isDemo={true}
+                                    onStartCooking={() => setShowCookingMode(true)}
+                                />
                             </div>
                         )}
                     </div>
@@ -346,6 +352,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onSignInWithGoogle, is
                     onSignIn={handleEmailSignIn}
                     onSignUp={handleEmailSignUp}
                 />
+            )}
+            {showCookingMode && (
+                <CookingMode recipe={demoRecipe} onClose={() => setShowCookingMode(false)} />
             )}
         </div>
     );

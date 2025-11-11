@@ -38,6 +38,12 @@ const CopyIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     </svg>
 );
 
+const ChefHatIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 21.352l-2.827-2.827a4.5 4.5 0 01-1.24-3.183V6.608a4.5 4.5 0 014.5-4.5h.142c1.932 0 3.734.79 5.028 2.138 1.157 1.21.942 3.391.314 4.515l-3.236 4.223M12 21.352L14.827 18.525M9 11.25h6" />
+    </svg>
+);
+
 const Section: React.FC<{ title: string; children: React.ReactNode; extra?: React.ReactNode }> = ({ title, children, extra }) => (
     <div>
         <div className="flex justify-between items-center mb-3">
@@ -56,9 +62,10 @@ interface RecipeCardProps {
     isSavedView?: boolean;
     isDemo?: boolean;
     onModify?: (recipe: Recipe, modification: string) => void;
+    onStartCooking?: (recipe: Recipe) => void;
 }
 
-export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onSave, onDelete, isSaved, isSavedView, isDemo, onModify }) => {
+export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onSave, onDelete, isSaved, isSavedView, isDemo, onModify, onStartCooking }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [justSaved, setJustSaved] = useState(false);
     const cardRef = useRef<HTMLDivElement>(null);
@@ -123,6 +130,12 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onSave, onDelete
             {children}
         </button>
     );
+    
+    const handleStartCooking = () => {
+        if (onStartCooking) {
+            onStartCooking(recipe);
+        }
+    };
 
     return (
         <article ref={cardRef} className="bg-[--card] border border-[--border] rounded-2xl shadow-lg flex flex-col overflow-hidden" aria-labelledby={titleId}>
@@ -196,63 +209,74 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onSave, onDelete
                 </div>
             )}
 
-            {!isDemo && (
-                <div className="p-4 bg-[--muted]/30 border-t border-[--border] no-print">
-                    <div className="flex gap-2 items-center justify-end">
-                        {isSavedView && onDelete ? (
-                            <button
-                                onClick={handleDelete}
-                                className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold text-[--destructive] bg-transparent hover:bg-[--destructive]/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--destructive] focus:ring-offset-[--card] transition-colors"
-                            >
-                                <TrashIcon className="h-4 w-4" aria-hidden="true" />
-                                <span>Delete</span>
-                            </button>
-                        ) : onSave && (
-                            <button
-                                onClick={handleSave}
-                                disabled={isSaving || isSaved}
-                                className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold text-[--primary] bg-transparent hover:bg-[--primary]/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--ring] focus:ring-offset-[--card] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            >
-                                {isSaving ? (
-                                <>
-                                        <svg aria-hidden="true" className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        <span>Saving...</span>
-                                </>
-                                ) : justSaved ? (
-                                    <>
-                                        <CheckIcon className="h-4 w-4 text-[--primary] animate-pop-in" aria-hidden="true" />
-                                        <span>Saved!</span>
-                                    </>
-                                ) : isSaved ? (
-                                    <>
-                                    <HeartIcon className="h-4 w-4 text-[--primary]" aria-hidden="true" />
-                                        <span>Saved</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <HeartIcon className="h-4 w-4" aria-hidden="true" />
-                                        <span>Save Recipe</span>
-                                    </>
-                                )}
-                            </button>
-                        )}
-                        
-                        <div className="border-l border-[--border] h-6 mx-2"></div>
-
+            <div className="p-4 bg-[--muted]/30 border-t border-[--border] no-print">
+                <div className="flex flex-wrap gap-2 items-center justify-end">
+                     {onStartCooking && (
                         <button
-                            onClick={handlePrint}
-                            className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold text-[--muted-foreground] bg-transparent hover:bg-[--muted] hover:text-[--foreground] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--ring] focus:ring-offset-[--card] transition-colors"
-                            aria-label="Print Recipe"
+                            onClick={handleStartCooking}
+                            className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold text-[--primary-foreground] bg-[--primary] hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--ring] focus:ring-offset-[--card] transition-colors"
                         >
-                            <PrintIcon className="h-4 w-4" aria-hidden="true" />
-                            <span>Print</span>
+                            <ChefHatIcon className="h-4 w-4" aria-hidden="true" />
+                            <span>Start Cooking</span>
                         </button>
-                    </div>
+                     )}
+                     <div className="hidden sm:block border-l border-[--border] h-6 mx-2"></div>
+                    {isSavedView && onDelete ? (
+                        <button
+                            onClick={handleDelete}
+                            className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold text-[--destructive] bg-transparent hover:bg-[--destructive]/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--destructive] focus:ring-offset-[--card] transition-colors"
+                        >
+                            <TrashIcon className="h-4 w-4" aria-hidden="true" />
+                            <span>Delete</span>
+                        </button>
+                    ) : onSave && !isDemo && (
+                        <button
+                            onClick={handleSave}
+                            disabled={isSaving || isSaved}
+                            className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold text-[--primary] bg-transparent hover:bg-[--primary]/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--ring] focus:ring-offset-[--card] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            {isSaving ? (
+                            <>
+                                    <svg aria-hidden="true" className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    <span>Saving...</span>
+                            </>
+                            ) : justSaved ? (
+                                <>
+                                    <CheckIcon className="h-4 w-4 text-[--primary] animate-pop-in" aria-hidden="true" />
+                                    <span>Saved!</span>
+                                </>
+                            ) : isSaved ? (
+                                <>
+                                <HeartIcon className="h-4 w-4 text-[--primary]" aria-hidden="true" />
+                                    <span>Saved</span>
+                                </>
+                            ) : (
+                                <>
+                                    <HeartIcon className="h-4 w-4" aria-hidden="true" />
+                                    <span>Save Recipe</span>
+                                </>
+                            )}
+                        </button>
+                    )}
+                    
+                    {!isDemo && (
+                        <>
+                            <div className="border-l border-[--border] h-6 mx-2"></div>
+                            <button
+                                onClick={handlePrint}
+                                className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold text-[--muted-foreground] bg-transparent hover:bg-[--muted] hover:text-[--foreground] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--ring] focus:ring-offset-[--card] transition-colors"
+                                aria-label="Print Recipe"
+                            >
+                                <PrintIcon className="h-4 w-4" aria-hidden="true" />
+                                <span>Print</span>
+                            </button>
+                        </>
+                    )}
                 </div>
-            )}
+            </div>
         </article>
     );
 };
