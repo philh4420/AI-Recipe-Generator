@@ -1,9 +1,10 @@
 import React from 'react';
-import type { Recipe } from '../types';
+import type { Recipe, FirebaseUser } from '../types';
 import { RecipeCard } from './RecipeCard';
 import { SkeletonLoader, SkeletonCard } from './SkeletonLoader';
 
 interface RecipeListProps {
+    user: FirebaseUser | null;
     recipes: Recipe[];
     isLoading: boolean;
     error: React.ReactNode | null;
@@ -28,7 +29,7 @@ const ErrorIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     </svg>
 );
 
-export const RecipeList: React.FC<RecipeListProps> = ({ recipes, isLoading, error, onClear, onSave, savedRecipeIds, onRetry, onModify, modifyingRecipeIndex, onStartCooking }) => {
+export const RecipeList: React.FC<RecipeListProps> = ({ user, recipes, isLoading, error, onClear, onSave, savedRecipeIds, onRetry, onModify, modifyingRecipeIndex, onStartCooking }) => {
     
     if (isLoading) {
         return <div className="mt-12"><SkeletonLoader /></div>;
@@ -71,9 +72,10 @@ export const RecipeList: React.FC<RecipeListProps> = ({ recipes, isLoading, erro
                                 <div className="animate-pulse"><SkeletonCard /></div>
                              ) : (
                                 <RecipeCard 
+                                    user={user}
                                     recipe={recipe}
                                     onSave={onSave}
-                                    isSaved={savedRecipeIds.includes(recipe.recipeName)}
+                                    isSaved={savedRecipeIds.includes(recipe.id || '')}
                                     onModify={(recipe, modification) => onModify(recipe, modification, index)}
                                     onStartCooking={onStartCooking}
                                 />

@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import type { Recipe } from '../types';
+import type { Recipe, FirebaseUser } from '../types';
 import { RecipeCard } from './RecipeCard';
 
 interface SavedRecipesProps {
     recipes: Recipe[];
     onDelete: (id: string) => Promise<void>;
     onStartCooking: (recipe: Recipe) => void;
+    user: FirebaseUser | null;
 }
 
 const BookmarkIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
@@ -52,7 +53,7 @@ const FilterControls: React.FC<{
 };
 
 
-export const SavedRecipes: React.FC<SavedRecipesProps> = ({ recipes, onDelete, onStartCooking }) => {
+export const SavedRecipes: React.FC<SavedRecipesProps> = ({ recipes, onDelete, onStartCooking, user }) => {
     const [sortOrder, setSortOrder] = useState('name_asc');
     const [cuisineFilter, setCuisineFilter] = useState('All Cuisines');
 
@@ -115,6 +116,7 @@ export const SavedRecipes: React.FC<SavedRecipesProps> = ({ recipes, onDelete, o
                     {filteredAndSortedRecipes.map((recipe, index) => (
                         <div key={recipe.id} className="animate-stagger-fade-in" style={{ animationDelay: `${index * 100}ms`}}>
                             <RecipeCard 
+                                user={user}
                                 recipe={recipe} 
                                 onDelete={onDelete}
                                 isSavedView={true}

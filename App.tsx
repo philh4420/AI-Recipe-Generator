@@ -116,13 +116,10 @@ const App: React.FC = () => {
         setError(null);
         setGeneratedRecipes([]);
         
-        // Combine form data with taste profile for the API request
         const apiPayload = {
             ...formData,
-            // Form values override profile defaults if they exist
             diet: formData.diet || tasteProfile.dietaryPreference || '',
-            cuisine: formData.cuisine || '', // Cuisine from form is primary
-            // Add profile data
+            cuisine: formData.cuisine || '',
             favoriteIngredients: tasteProfile.favoriteIngredients || '',
             favoriteCuisines: tasteProfile.favoriteCuisines || '',
             excludedIngredients: tasteProfile.excludedIngredients || '',
@@ -131,7 +128,6 @@ const App: React.FC = () => {
         setLastFormData(apiPayload);
 
         try {
-            // Note: We are now passing the combined `apiPayload`
             const recipes = await generateRecipes(apiPayload as any);
             setGeneratedRecipes(recipes);
         } catch (err: any) {
@@ -184,6 +180,7 @@ const App: React.FC = () => {
         }
 
         try {
+            // Updated to pass userId to the refactored addRecipe function
             const docId = await addRecipe(user.uid, recipe);
             const newSavedRecipe = { ...recipe, id: docId };
             setSavedRecipes(prev => [...prev, newSavedRecipe]);
@@ -368,12 +365,13 @@ const App: React.FC = () => {
                             tasteProfile={tasteProfile}
                         />
                         <RecipeList
+                            user={user}
                             recipes={generatedRecipes}
                             isLoading={isLoading}
                             error={error}
                             onClear={handleClear}
                             onSave={handleSaveRecipe}
-                            savedRecipeIds={savedRecipes.map(r => r.recipeName)}
+                            savedRecipeIds={savedRecipes.map(r => r.id || '')}
                             onRetry={handleRetry}
                             onModify={handleModifyRecipe}
                             modifyingRecipeIndex={modifyingRecipeIndex}
@@ -382,7 +380,7 @@ const App: React.FC = () => {
                     </>
                 );
             case 'saved':
-                return <SavedRecipes recipes={savedRecipes} onDelete={handleDeleteRecipe} onStartCooking={handleStartCooking} />;
+                return <SavedRecipes user={user} recipes={savedRecipes} onDelete={handleDeleteRecipe} onStartCooking={handleStartCooking} />;
             case 'pantry':
                 return <Pantry items={pantryItems} onAddItem={handleAddPantryItem} onDeleteItem={handleDeletePantryItem} />;
             case 'shoppingList':

@@ -1,6 +1,8 @@
-import React, { useState, useRef, useId } from 'react';
-import type { Recipe } from '../types';
+import React, { useState, useRef, useId, useEffect } from 'react';
+import type { Recipe, FirebaseUser } from '../types';
 import { useToast } from '../hooks/useToast';
+import { Reviews } from './Reviews';
+import { StarRating } from './StarRating';
 
 const ClockIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} {...props}>
@@ -55,6 +57,7 @@ const Section: React.FC<{ title: string; children: React.ReactNode; extra?: Reac
 );
 
 interface RecipeCardProps {
+    user: FirebaseUser | null;
     recipe: Recipe;
     onSave?: (recipe: Recipe) => Promise<void>;
     onDelete?: (id: string) => Promise<void>;
@@ -65,96 +68,107 @@ interface RecipeCardProps {
     onStartCooking?: (recipe: Recipe) => void;
 }
 
-export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onSave, onDelete, isSaved, isSavedView, isDemo, onModify, onStartCooking }) => {
+export const RecipeCard: React.FC<RecipeCardProps> = ({ user, recipe, onSave, onDelete, isSaved, isSavedView, isDemo, onModify, onStartCooking }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [justSaved, setJustSaved] = useState(false);
+    const [showReviews, setShowReviews] = useState(false);
+    const [currentRecipe, setCurrentRecipe] = useState(recipe); // Local state for optimistic updates
     const cardRef = useRef<HTMLDivElement>(null);
     const titleId = useId();
     const { addToast } = useToast();
+
+    useEffect(() => {
+        setCurrentRecipe(recipe);
+    }, [recipe]);
     
     const handleSave = async () => {
         if (onSave) {
             setIsSaving(true);
-            await onSave(recipe);
+            await onSave(currentRecipe);
             setIsSaving(false);
             setJustSaved(true);
-            setTimeout(() => {
-                setJustSaved(false);
-            }, 1500);
+            setTimeout(() => setJustSaved(false), 1500);
         }
     };
     
     const handleDelete = async () => {
-        if (onDelete && recipe.id) {
-            await onDelete(recipe.id);
+        if (onDelete && currentRecipe.id) {
+            await onDelete(currentRecipe.id);
         }
     };
 
     const handlePrint = () => {
         const node = cardRef.current;
         if (!node) return;
-
         const onAfterPrint = () => {
             node.classList.remove('printing-container');
             window.removeEventListener('afterprint', onAfterPrint);
         };
-
         window.addEventListener('afterprint', onAfterPrint);
         node.classList.add('printing-container');
         window.print();
     };
 
     const handleCopyIngredients = () => {
-        const ingredientsText = recipe.ingredients.join('\n');
-        navigator.clipboard.writeText(ingredientsText)
-            .then(() => {
-                addToast({ message: 'Ingredients copied to clipboard!', type: 'success' });
-            })
-            .catch(err => {
-                console.error('Failed to copy ingredients: ', err);
-                addToast({ message: 'Failed to copy ingredients.', type: 'error' });
-            });
+        navigator.clipboard.writeText(currentRecipe.ingredients.join('\n'))
+            .then(() => addToast({ message: 'Ingredients copied!', type: 'success' }))
+            .catch(() => addToast({ message: 'Failed to copy.', type: 'error' }));
     };
 
     const handleModify = (modification: string) => {
-        if (onModify) {
-            onModify(recipe, modification);
-        }
+        if (onModify) onModify(currentRecipe, modification);
     };
     
     const ModificationButton: React.FC<{onClick: () => void; children: React.ReactNode}> = ({ onClick, children }) => (
-        <button 
-            onClick={onClick}
-            className="px-3 py-1.5 text-xs font-semibold bg-[--muted] text-[--muted-foreground] rounded-full hover:bg-[--accent] hover:text-[--accent-foreground] transition-colors"
-        >
+        <button onClick={onClick} className="px-3 py-1.5 text-xs font-semibold bg-[--muted] text-[--muted-foreground] rounded-full hover:bg-[--accent] hover:text-[--accent-foreground] transition-colors">
             {children}
         </button>
     );
     
     const handleStartCooking = () => {
-        if (onStartCooking) {
-            onStartCooking(recipe);
-        }
+        if (onStartCooking) onStartCooking(currentRecipe);
+    };
+
+    const handleReviewAdded = (newReview: any) => {
+        // Optimistically update the UI
+        setCurrentRecipe(prev => {
+            const oldTotalRating = (prev.avgRating || 0) * (prev.ratingCount || 0);
+            const newRatingCount = (prev.ratingCount || 0) + 1;
+            const newAvgRating = (oldTotalRating + newReview.rating) / newRatingCount;
+            return {
+                ...prev,
+                ratingCount: newRatingCount,
+                avgRating: newAvgRating,
+            };
+        });
     };
 
     return (
-        <article ref={cardRef} className="bg-[--card] border border-[--border] rounded-2xl shadow-lg flex flex-col overflow-hidden" aria-labelledby={titleId}>
+        <article ref={cardRef} className="bg-[--card] border border-[--border] rounded-2xl shadow-lg flex flex-col overflow-hidden transition-all duration-300">
             <div className='p-8 flex-grow'>
-                <h2 id={titleId} className="text-2xl font-bold text-[--foreground] mb-2">{recipe.recipeName}</h2>
-                <p className="text-[--muted-foreground] mb-6">{recipe.description}</p>
+                <h2 id={titleId} className="text-2xl font-bold text-[--foreground] mb-2">{currentRecipe.recipeName}</h2>
+                
+                <button 
+                    onClick={() => setShowReviews(!showReviews)}
+                    className="flex items-center gap-2 mb-4 text-sm group"
+                    aria-expanded={showReviews}
+                >
+                    <StarRating rating={currentRecipe.avgRating || 0} />
+                    <span className="text-[--muted-foreground] group-hover:text-[--primary] transition-colors">
+                        ({currentRecipe.ratingCount || 0} reviews)
+                    </span>
+                </button>
+
+                <p className="text-[--muted-foreground] mb-6">{currentRecipe.description}</p>
                 
                 <div className="flex flex-wrap gap-x-6 gap-y-3 mb-8 text-sm text-[--foreground]">
                     <div className="flex items-center gap-2">
                         <ClockIcon className="h-5 w-5 text-[--primary]" aria-hidden="true" />
-                        <div>
-                            <span className="font-semibold">Prep:</span> {recipe.prepTime}
-                        </div>
+                        <div><span className="font-semibold">Prep:</span> {currentRecipe.prepTime}</div>
                     </div>
                     <div className="flex items-center gap-2">
                         <ClockIcon className="h-5 w-5 text-[--primary]" aria-hidden="true" />
-                        <div>
-                            <span className="font-semibold">Cook:</span> {recipe.cookTime}
-                        </div>
+                        <div><span className="font-semibold">Cook:</span> {currentRecipe.cookTime}</div>
                     </div>
                 </div>
                 
@@ -164,25 +178,19 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onSave, onDelete
                     <div className="lg:col-span-4">
                         <Section 
                             title="Ingredients"
-                            extra={
-                                <button onClick={handleCopyIngredients} className="text-[--muted-foreground] hover:text-[--primary] transition-colors no-print" aria-label="Copy ingredients">
-                                    <CopyIcon className="h-5 w-5" />
-                                </button>
-                            }
+                            extra={<button onClick={handleCopyIngredients} className="text-[--muted-foreground] hover:text-[--primary] transition-colors no-print" aria-label="Copy ingredients"><CopyIcon className="h-5 w-5" /></button>}
                         >
                             <ul className="space-y-2 list-disc list-inside text-[--foreground]">
-                                {recipe.ingredients.map((ingredient, index) => (
-                                    <li key={index}>{ingredient}</li>
-                                ))}
+                                {currentRecipe.ingredients.map((ing, i) => <li key={i}>{ing}</li>)}
                             </ul>
                         </Section>
                     </div>
                     <div className="lg:col-span-8">
                         <Section title="Instructions">
                             <ol className="space-y-4 text-[--foreground]">
-                                {recipe.instructions.map((step, index) => (
-                                    <li key={index} className="flex">
-                                        <span className="mr-4 flex-shrink-0 bg-[--primary] text-[--primary-foreground] font-bold h-6 w-6 rounded-full text-xs flex items-center justify-center">{index + 1}</span>
+                                {currentRecipe.instructions.map((step, i) => (
+                                    <li key={i} className="flex">
+                                        <span className="mr-4 flex-shrink-0 bg-[--primary] text-[--primary-foreground] font-bold h-6 w-6 rounded-full text-xs flex items-center justify-center">{i + 1}</span>
                                         <span className="flex-1">{step}</span>
                                     </li>
                                 ))}
@@ -196,80 +204,46 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onSave, onDelete
                  <div className="px-8 pb-6 pt-2 no-print">
                     <h4 className="text-sm font-semibold text-[--muted-foreground] mb-3">Want a change?</h4>
                     <div className="flex flex-wrap gap-2">
-                        <ModificationButton onClick={() => handleModify("make it quicker")}>
-                            Make it Quicker
-                        </ModificationButton>
-                        <ModificationButton onClick={() => handleModify("make it healthier")}>
-                            Make it Healthier
-                        </ModificationButton>
-                        <ModificationButton onClick={() => handleModify("make it vegetarian")}>
-                            Make it Vegetarian
-                        </ModificationButton>
+                        <ModificationButton onClick={() => handleModify("make it quicker")}>Quicker</ModificationButton>
+                        <ModificationButton onClick={() => handleModify("make it healthier")}>Healthier</ModificationButton>
+                        <ModificationButton onClick={() => handleModify("make it vegetarian")}>Vegetarian</ModificationButton>
                     </div>
+                </div>
+            )}
+            
+            {showReviews && user && currentRecipe.id && (
+                <div className="bg-[--muted]/20 p-8 border-y border-[--border] no-print">
+                     <Reviews user={user} recipeId={currentRecipe.id} onReviewAdded={handleReviewAdded} />
                 </div>
             )}
 
             <div className="p-4 bg-[--muted]/30 border-t border-[--border] no-print">
                 <div className="flex flex-wrap gap-2 items-center justify-end">
                      {onStartCooking && (
-                        <button
-                            onClick={handleStartCooking}
-                            className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold text-[--primary-foreground] bg-[--primary] hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--ring] focus:ring-offset-[--card] transition-colors"
-                        >
+                        <button onClick={handleStartCooking} className="flex-grow sm:flex-grow-0 flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold text-[--primary-foreground] bg-[--primary] hover:brightness-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--ring] focus:ring-offset-[--card] transition-colors">
                             <ChefHatIcon className="h-4 w-4" aria-hidden="true" />
                             <span>Start Cooking</span>
                         </button>
                      )}
                      <div className="hidden sm:block border-l border-[--border] h-6 mx-2"></div>
                     {isSavedView && onDelete ? (
-                        <button
-                            onClick={handleDelete}
-                            className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold text-[--destructive] bg-transparent hover:bg-[--destructive]/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--destructive] focus:ring-offset-[--card] transition-colors"
-                        >
+                        <button onClick={handleDelete} className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold text-[--destructive] bg-transparent hover:bg-[--destructive]/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--destructive] focus:ring-offset-[--card] transition-colors">
                             <TrashIcon className="h-4 w-4" aria-hidden="true" />
                             <span>Delete</span>
                         </button>
                     ) : onSave && !isDemo && (
-                        <button
-                            onClick={handleSave}
-                            disabled={isSaving || isSaved}
-                            className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold text-[--primary] bg-transparent hover:bg-[--primary]/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--ring] focus:ring-offset-[--card] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            {isSaving ? (
-                            <>
-                                    <svg aria-hidden="true" className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    <span>Saving...</span>
-                            </>
-                            ) : justSaved ? (
-                                <>
-                                    <CheckIcon className="h-4 w-4 text-[--primary] animate-pop-in" aria-hidden="true" />
-                                    <span>Saved!</span>
-                                </>
-                            ) : isSaved ? (
-                                <>
-                                <HeartIcon className="h-4 w-4 text-[--primary]" aria-hidden="true" />
-                                    <span>Saved</span>
-                                </>
-                            ) : (
-                                <>
-                                    <HeartIcon className="h-4 w-4" aria-hidden="true" />
-                                    <span>Save Recipe</span>
-                                </>
-                            )}
+                        <button onClick={handleSave} disabled={isSaving || isSaved} className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold text-[--primary] bg-transparent hover:bg-[--primary]/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--ring] focus:ring-offset-[--card] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            {isSaving ? ( <> <svg aria-hidden="true" className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> <span>Saving...</span></>
+                            ) : justSaved ? ( <> <CheckIcon className="h-4 w-4 text-[--primary] animate-pop-in" aria-hidden="true" /> <span>Saved!</span> </>
+                            ) : isSaved ? ( <> <HeartIcon className="h-4 w-4 text-[--primary]" aria-hidden="true" /> <span>Saved</span> </>
+                            ) : ( <> <HeartIcon className="h-4 w-4" aria-hidden="true" /> <span>Save Recipe</span> </> )}
                         </button>
                     )}
                     
                     {!isDemo && (
                         <>
                             <div className="border-l border-[--border] h-6 mx-2"></div>
-                            <button
-                                onClick={handlePrint}
-                                className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold text-[--muted-foreground] bg-transparent hover:bg-[--muted] hover:text-[--foreground] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--ring] focus:ring-offset-[--card] transition-colors"
-                                aria-label="Print Recipe"
-                            >
+                            <button onClick={handlePrint} className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-semibold text-[--muted-foreground] bg-transparent hover:bg-[--muted] hover:text-[--foreground] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[--ring] focus:ring-offset-[--card] transition-colors" aria-label="Print Recipe">
                                 <PrintIcon className="h-4 w-4" aria-hidden="true" />
                                 <span>Print</span>
                             </button>
