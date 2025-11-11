@@ -1,6 +1,6 @@
 import { collection, addDoc, getDocs, doc, deleteDoc, writeBatch, query, where, updateDoc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
-import type { Recipe, PantryItem, ShoppingListItem, MealPlan } from "../types";
+import type { Recipe, PantryItem, ShoppingListItem, MealPlan, TasteProfile } from "../types";
 
 const USERS_COLLECTION = "users";
 const RECIPES_SUBCOLLECTION = "recipes";
@@ -139,8 +139,6 @@ export const deleteShoppingListItems = async (userId: string, itemIds: string[])
 
 export const getMealPlan = async (userId: string): Promise<MealPlan> => {
     try {
-        // Workaround: Store the meal plan in a special doc within the 'recipes' collection
-        // to leverage existing security rules and avoid permissions errors.
         const planDocRef = doc(db, USERS_COLLECTION, userId, RECIPES_SUBCOLLECTION, MEAL_PLAN_DOC_ID);
         const docSnap = await getDoc(planDocRef);
         if (docSnap.exists()) {
@@ -155,11 +153,37 @@ export const getMealPlan = async (userId: string): Promise<MealPlan> => {
 
 export const updateMealPlan = async (userId: string, mealPlan: MealPlan): Promise<void> => {
     try {
-        // Workaround: Update the special meal plan doc in the 'recipes' collection.
         const planDocRef = doc(db, USERS_COLLECTION, userId, RECIPES_SUBCOLLECTION, MEAL_PLAN_DOC_ID);
         await setDoc(planDocRef, mealPlan);
     } catch (e) {
         console.error("Error updating meal plan: ", e);
         throw new Error("Could not update meal plan.");
+    }
+};
+
+// --- TASTE PROFILE ---
+
+export const getTasteProfile = async (userId: string): Promise<TasteProfile> => {
+    try {
+        const userDocRef = doc(db, USERS_COLLECTION, userId);
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists() && docSnap.data().tasteProfile) {
+            return docSnap.data().tasteProfile as TasteProfile;
+        }
+        return {}; // Return empty object if no profile exists
+    } catch (e) {
+        console.error("Error getting taste profile: ", e);
+        throw new Error("Could not fetch taste profile.");
+    }
+};
+
+export const updateTasteProfile = async (userId: string, tasteProfile: TasteProfile): Promise<void> => {
+    try {
+        const userDocRef = doc(db, USERS_COLLECTION, userId);
+        // Use set with merge to create or update the profile field without overwriting other user data
+        await setDoc(userDocRef, { tasteProfile }, { merge: true });
+    } catch (e) {
+        console.error("Error updating taste profile: ", e);
+        throw new Error("Could not update taste profile.");
     }
 };

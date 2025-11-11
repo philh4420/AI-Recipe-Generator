@@ -119,6 +119,12 @@ export const Header: React.FC<HeaderProps> = ({ user, onSignOut, isDarkMode, tog
                                             <p className="text-xs text-[--muted-foreground] truncate">{user.email}</p>
                                         </div>
                                         <button
+                                            onClick={() => { setView('profile'); setProfileMenuOpen(false); }}
+                                            className="w-full text-left px-4 py-2 text-sm text-[--foreground] hover:bg-[--muted]"
+                                        >
+                                            My Profile
+                                        </button>
+                                        <button
                                             onClick={onSignOut}
                                             className="w-full text-left px-4 py-2 text-sm text-[--destructive] hover:bg-[--destructive]/10"
                                         >
@@ -158,6 +164,7 @@ export const Header: React.FC<HeaderProps> = ({ user, onSignOut, isDarkMode, tog
                     <NavButton targetView="shoppingList" isMobile>Shopping List</NavButton>
                     <NavButton targetView="mealPlanner" isMobile>Meal Planner</NavButton>
                     <div className="border-b border-[--border] my-2"></div>
+                    <NavButton targetView="profile" isMobile>My Profile</NavButton>
                      <button onClick={onSignOut} className="w-full text-left px-4 py-2 text-base text-[--destructive] hover:bg-[--destructive]/10 rounded-md">
                         Sign Out
                     </button>

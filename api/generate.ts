@@ -1,15 +1,16 @@
-
-
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI, Type } from "@google/genai";
 
 // This file runs on the server, so we define the types it needs directly.
-interface FormData {
+interface ApiPayload {
     ingredients: string;
     diet: string;
     cuisine: string;
     cookingMethod: string;
     mealType: string;
+    favoriteIngredients?: string;
+    favoriteCuisines?: string;
+    excludedIngredients?: string;
 }
 
 const recipeSchema = {
@@ -59,23 +60,31 @@ export default async function handler(
     return response.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  // On the server, we use API_KEY without any prefix.
   const API_KEY = process.env.API_KEY;
   if (!API_KEY) {
     return response.status(500).json({ error: "The API_KEY environment variable is not set on the server." });
   }
   
   const ai = new GoogleGenAI({ apiKey: API_KEY });
-  const formData: FormData = request.body;
-  const { ingredients, diet, cuisine, cookingMethod, mealType } = formData;
+  const payload: ApiPayload = request.body;
+  const { 
+      ingredients, diet, cuisine, cookingMethod, mealType,
+      favoriteIngredients, favoriteCuisines, excludedIngredients 
+  } = payload;
     
-  // Optimized prompt: More direct and relies on the schema for formatting.
-  const prompt = `Generate 3 recipes based on the following criteria:
-    - Main Ingredients: ${ingredients || 'any'}
-    - Meal Type: ${mealType || 'any'}
-    - Diet: ${diet || 'any'}
-    - Cuisine: ${cuisine || 'any'}
-    - Cooking Style: ${cookingMethod || 'any'}`;
+  // Dynamically build the prompt based on provided data
+  let prompt = `Generate 3 recipes based on the following user-provided criteria.`;
+  
+  if (ingredients) prompt += `\n- Main Ingredients: ${ingredients}`;
+  if (mealType) prompt += `\n- Meal Type: ${mealType}`;
+  if (diet) prompt += `\n- Diet: ${diet}`;
+  if (cuisine) prompt += `\n- Cuisine: ${cuisine}`;
+  if (cookingMethod) prompt += `\n- Cooking Style: ${cookingMethod}`;
+  
+  // Add taste profile data to the prompt
+  if (favoriteIngredients) prompt += `\n- The user's favorite ingredients to inspire the recipe: ${favoriteIngredients}.`;
+  if (favoriteCuisines) prompt += `\n- The user's favorite cuisines to draw inspiration from: ${favoriteCuisines}.`;
+  if (excludedIngredients) prompt += `\n- IMPORTANT RULE: Absolutely DO NOT include these ingredients or any variations of them: ${excludedIngredients}. This is a critical exclusion.`;
 
   try {
     const result = await ai.models.generateContent({
@@ -91,7 +100,6 @@ export default async function handler(
     });
 
     const jsonText = result.text.trim();
-    // Validate by parsing before sending.
     const recipeData = JSON.parse(jsonText);
     return response.status(200).json(recipeData);
 
@@ -100,7 +108,6 @@ export default async function handler(
         
     let detailedError = "An error occurred while generating recipes.";
 
-    // Check for specific Gemini API error structure or fallback to generic message
     if (error.response && error.response.data && error.response.data.error) {
         detailedError = `Gemini API Error: ${error.response.data.error.message}`;
     } else if (error.message) {
@@ -111,7 +118,6 @@ export default async function handler(
         return response.status(500).json({ error: "Failed to parse a valid JSON response from the AI model. The model may have returned an unexpected format." });
     }
     
-    // Pass the more detailed error message to the client
     return response.status(500).json({ error: detailedError });
   }
 }

@@ -49,7 +49,6 @@ export interface ShoppingListItem {
   isChecked: boolean;
 }
 
-// New types for Meal Planner
 export type DayOfWeek = 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday';
 
 export const DAYS_OF_WEEK: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -63,5 +62,13 @@ export type MealPlan = {
     [key in DayOfWeek]?: PlannedRecipe | null;
 };
 
+// New type for Taste Profile
+export interface TasteProfile {
+    favoriteIngredients?: string;
+    favoriteCuisines?: string;
+    dietaryPreference?: string;
+    excludedIngredients?: string;
+}
+
 // Shared View type
-export type View = 'generator' | 'saved' | 'pantry' | 'shoppingList' | 'mealPlanner';
+export type View = 'generator' | 'saved' | 'pantry' | 'shoppingList' | 'mealPlanner' | 'profile';

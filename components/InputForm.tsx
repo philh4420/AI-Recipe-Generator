@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { InputFormProps, FormData, PantryItem } from '../types';
+import type { InputFormProps, FormData, PantryItem, TasteProfile } from '../types';
 
 const DIETARY_OPTIONS = ["Any", "Atkins", "Dairy-Free", "DASH", "Diabetic", "Egg-Free", "Gluten-Free", "Halal", "Keto", "Kosher", "Low-Carb", "Low-Fat", "Low-FODMAP", "Low-Salt", "Nut-Free", "Paleo", "Pescatarian", "Raw Food", "Shellfish-Free", "Soy-Free", "Sugar-Free", "Vegan", "Vegetarian", "Whole30"];
 const CUISINE_OPTIONS = ["Any", "African", "American", "Argentinian", "Brazilian", "British", "Cajun & Creole", "Caribbean", "Chinese", "Cuban", "Eastern European", "Ethiopian", "Filipino", "French", "German", "Greek", "Indian", "Irish", "Italian", "Japanese", "Jewish", "Korean", "Latin American", "Lebanese", "Malaysian", "Mediterranean", "Mexican", "Middle Eastern", "Moroccan", "Nordic", "Pakistani", "Peruvian", "Polish", "Portuguese", "Russian", "Southern (US)", "Spanish", "Thai", "Turkish", "Vietnamese"];
@@ -18,9 +18,10 @@ const InputField: React.FC<{ icon: React.ReactNode; children: React.ReactNode }>
 interface ExtendedInputFormProps extends InputFormProps {
     onSurprise: () => void;
     pantryItems: PantryItem[];
+    tasteProfile?: TasteProfile;
 }
 
-export const InputForm: React.FC<ExtendedInputFormProps> = ({ isLoading, onSubmit, onSurprise, pantryItems }) => {
+export const InputForm: React.FC<ExtendedInputFormProps> = ({ isLoading, onSubmit, onSurprise, pantryItems, tasteProfile }) => {
     const [formData, setFormData] = useState<FormData>({
         ingredients: 'chicken, tomatoes, garlic',
         diet: '',
@@ -28,6 +29,9 @@ export const InputForm: React.FC<ExtendedInputFormProps> = ({ isLoading, onSubmi
         cookingMethod: '',
         mealType: '',
     });
+    const [profileBannerVisible, setProfileBannerVisible] = useState(true);
+
+    const isProfileActive = tasteProfile && Object.values(tasteProfile).some(val => val);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { id, value } = e.target;
@@ -55,6 +59,20 @@ export const InputForm: React.FC<ExtendedInputFormProps> = ({ isLoading, onSubmi
 
     return (
         <form onSubmit={handleSubmit} className="space-y-8 bg-[--card] p-8 rounded-2xl shadow-lg border border-[--border]">
+            {isProfileActive && profileBannerVisible && (
+                <div className="bg-[--accent]/50 border border-[--primary]/50 text-[--accent-foreground] px-4 py-3 rounded-lg relative text-sm" role="alert">
+                    <strong className="font-bold">Heads up!</strong>
+                    <span className="block sm:inline ml-1">Your taste profile is being applied to this search.</span>
+                    <button
+                        type="button"
+                        onClick={() => setProfileBannerVisible(false)}
+                        className="absolute top-0 bottom-0 right-0 px-4 py-3"
+                        aria-label="Dismiss taste profile notification"
+                    >
+                        <svg className="fill-current h-6 w-6 text-[--accent-foreground]/70" role="button" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><title>Close</title><path d="M14.348 14.849a1.2 1.2 0 0 1-1.697 0L10 11.819l-2.651 3.029a1.2 1.2 0 1 1-1.697-1.697l2.758-3.15-2.759-3.152a1.2 1.2 0 1 1 1.697-1.697L10 8.183l2.651-3.031a1.2 1.2 0 1 1 1.697 1.697l-2.758 3.152 2.758 3.15a1.2 1.2 0 0 1 0 1.698z"/></svg>
+                    </button>
+                </div>
+            )}
             <div className="text-center">
                 <h2 className="text-2xl font-bold text-[--card-foreground]">Create Your Perfect Dish</h2>
                 <p className="text-[--muted-foreground] mt-2">Tell us what you have and what you like, and we'll whip up some recipes!</p>
