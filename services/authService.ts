@@ -1,22 +1,13 @@
-import { 
-    GoogleAuthProvider, 
-    signInWithPopup, 
-    signOut, 
-    onAuthStateChanged as onFirebaseAuthStateChanged,
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
-    updateProfile,
-    NextOrObserver,
-    User
-} from "firebase/auth";
+// FIX: Import firebase compat and update all functions to use the v8 syntax.
+import firebase from 'firebase/compat/app';
 import { auth } from "../firebase";
 import type { AuthCredentials } from "../types";
 
-const provider = new GoogleAuthProvider();
+const provider = new firebase.auth.GoogleAuthProvider();
 
 export const signInWithGoogle = async (): Promise<void> => {
     try {
-        await signInWithPopup(auth, provider);
+        await auth.signInWithPopup(provider);
     } catch (error) {
         console.error("Error signing in with Google: ", error);
         throw error;
@@ -43,8 +34,10 @@ export const signUpWithEmailPassword = async ({ displayName, email, password }: 
         throw new Error("Missing fields for sign up.");
     }
     try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        await updateProfile(userCredential.user, { displayName });
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        if (userCredential.user) {
+            await userCredential.user.updateProfile({ displayName });
+        }
     } catch (error: any) {
         console.error("Error signing up: ", error.code);
         throw new Error(getAuthErrorMessage(error.code));
@@ -56,7 +49,7 @@ export const signInWithEmailPassword = async ({ email, password }: AuthCredentia
         throw new Error("Password is required for sign in.");
     }
     try {
-        await signInWithEmailAndPassword(auth, email, password);
+        await auth.signInWithEmailAndPassword(email, password);
     } catch (error: any) {
         console.error("Error signing in: ", error.code);
         throw new Error(getAuthErrorMessage(error.code));
@@ -66,13 +59,13 @@ export const signInWithEmailPassword = async ({ email, password }: AuthCredentia
 
 export const signOutUser = async (): Promise<void> => {
     try {
-        await signOut(auth);
+        await auth.signOut();
     } catch (error) {
         console.error("Error signing out: ", error);
         throw error;
     }
 };
 
-export const onAuthStateChange = (callback: NextOrObserver<User>) => {
-    return onFirebaseAuthStateChanged(auth, callback);
+export const onAuthStateChange = (callback: (user: firebase.User | null) => void) => {
+    return auth.onAuthStateChanged(callback);
 };

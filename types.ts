@@ -1,9 +1,17 @@
-import type { User } from 'firebase/auth';
+// FIX: Import firebase from compat to define the User type.
+import type firebase from 'firebase/compat/app';
 
 export interface BeveragePairing {
   wine: string;
   beer: string;
   nonAlcoholic: string;
+}
+
+export interface NutritionalInfo {
+  calories: string;
+  protein: string;
+  carbs: string;
+  fat: string;
 }
 
 export interface Recipe {
@@ -20,6 +28,7 @@ export interface Recipe {
   ownerId?: string;
   ownerName?: string;
   beveragePairing?: BeveragePairing;
+  nutritionalInfo?: NutritionalInfo;
 }
 
 export interface InputFormProps {
@@ -35,7 +44,7 @@ export interface FormData {
     mealType: string;
 }
 
-export type FirebaseUser = User;
+export type FirebaseUser = firebase.User;
 
 export interface AuthCredentials {
     displayName?: string;

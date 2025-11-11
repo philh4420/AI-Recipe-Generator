@@ -1,4 +1,4 @@
-import { collection, addDoc, getDocs, doc, deleteDoc, writeBatch, updateDoc, getDoc, setDoc, runTransaction } from "firebase/firestore";
+// FIX: Removed modular imports and updated all Firestore calls to use the v8/compat syntax.
 import { db } from "../firebase";
 import type { Recipe, PantryItem, ShoppingListItem, MealPlan, TasteProfile, Review } from "../types";
 
@@ -20,7 +20,8 @@ export const addRecipe = async (userId: string, recipe: Omit<Recipe, 'id'>): Pro
             ratingCount: 0,
             reviews: [],
         };
-        const docRef = await addDoc(collection(db, USERS_COLLECTION, userId, RECIPES_SUBCOLLECTION), fullRecipe);
+        const recipesCollection = db.collection(USERS_COLLECTION).doc(userId).collection(RECIPES_SUBCOLLECTION);
+        const docRef = await recipesCollection.add(fullRecipe);
         return docRef.id;
     } catch (e) {
         console.error("Error adding recipe: ", e);
@@ -30,8 +31,8 @@ export const addRecipe = async (userId: string, recipe: Omit<Recipe, 'id'>): Pro
 
 export const getRecipes = async (userId: string): Promise<Recipe[]> => {
     try {
-        const recipesCollection = collection(db, USERS_COLLECTION, userId, RECIPES_SUBCOLLECTION);
-        const recipesSnapshot = await getDocs(recipesCollection);
+        const recipesCollection = db.collection(USERS_COLLECTION).doc(userId).collection(RECIPES_SUBCOLLECTION);
+        const recipesSnapshot = await recipesCollection.get();
         return recipesSnapshot.docs
             .filter(doc => doc.id !== MEAL_PLAN_DOC_ID && doc.id !== TASTE_PROFILE_DOC_ID)
             .map(doc => ({ id: doc.id, ...doc.data() } as Recipe));
@@ -43,8 +44,8 @@ export const getRecipes = async (userId: string): Promise<Recipe[]> => {
 
 export const deleteRecipe = async (userId: string, recipeId: string): Promise<void> => {
     try {
-        const recipeDocRef = doc(db, USERS_COLLECTION, userId, RECIPES_SUBCOLLECTION, recipeId);
-        await deleteDoc(recipeDocRef);
+        const recipeDocRef = db.collection(USERS_COLLECTION).doc(userId).collection(RECIPES_SUBCOLLECTION).doc(recipeId);
+        await recipeDocRef.delete();
     } catch (e) {
         console.error("Error deleting recipe: ", e);
         throw new Error("Could not delete recipe.");
@@ -54,11 +55,11 @@ export const deleteRecipe = async (userId: string, recipeId: string): Promise<vo
 // --- REVIEWS (EMBEDDED MODEL) ---
 
 export const addReview = async (userId: string, recipeId: string, reviewData: Omit<Review, 'id' | 'createdAt'>): Promise<void> => {
-    const recipeRef = doc(db, USERS_COLLECTION, userId, RECIPES_SUBCOLLECTION, recipeId);
+    const recipeRef = db.collection(USERS_COLLECTION).doc(userId).collection(RECIPES_SUBCOLLECTION).doc(recipeId);
     try {
-        await runTransaction(db, async (transaction) => {
+        await db.runTransaction(async (transaction) => {
             const recipeDoc = await transaction.get(recipeRef);
-            if (!recipeDoc.exists()) {
+            if (!recipeDoc.exists) {
                 throw new Error("Recipe document not found!");
             }
 
@@ -69,7 +70,7 @@ export const addReview = async (userId: string, recipeId: string, reviewData: Om
 
             const newReview: Review = {
                 ...reviewData,
-                id: doc(collection(db, 'dummy')).id, // Generate a unique client-side ID for the review
+                id: db.collection('dummy').doc().id, // Generate a unique client-side ID for the review
                 createdAt: new Date().toISOString(), // Use ISO string for simplicity and JSON compatibility
             };
 
@@ -95,8 +96,8 @@ export const addReview = async (userId: string, recipeId: string, reviewData: Om
 
 export const getPantryItems = async (userId: string): Promise<PantryItem[]> => {
     try {
-        const pantryCollection = collection(db, USERS_COLLECTION, userId, PANTRY_SUBCOLLECTION);
-        const querySnapshot = await getDocs(pantryCollection);
+        const pantryCollection = db.collection(USERS_COLLECTION).doc(userId).collection(PANTRY_SUBCOLLECTION);
+        const querySnapshot = await pantryCollection.get();
         return querySnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name }));
     } catch (e) {
         console.error("Error getting pantry items: ", e);
@@ -106,8 +107,8 @@ export const getPantryItems = async (userId: string): Promise<PantryItem[]> => {
 
 export const addPantryItem = async (userId: string, itemName: string): Promise<PantryItem> => {
     try {
-        const pantryCollection = collection(db, USERS_COLLECTION, userId, PANTRY_SUBCOLLECTION);
-        const docRef = await addDoc(pantryCollection, { name: itemName });
+        const pantryCollection = db.collection(USERS_COLLECTION).doc(userId).collection(PANTRY_SUBCOLLECTION);
+        const docRef = await pantryCollection.add({ name: itemName });
         return { id: docRef.id, name: itemName };
     } catch (e) {
         console.error("Error adding pantry item: ", e);
@@ -117,8 +118,8 @@ export const addPantryItem = async (userId: string, itemName: string): Promise<P
 
 export const deletePantryItem = async (userId: string, itemId: string): Promise<void> => {
     try {
-        const itemDocRef = doc(db, USERS_COLLECTION, userId, PANTRY_SUBCOLLECTION, itemId);
-        await deleteDoc(itemDocRef);
+        const itemDocRef = db.collection(USERS_COLLECTION).doc(userId).collection(PANTRY_SUBCOLLECTION).doc(itemId);
+        await itemDocRef.delete();
     } catch (e) {
         console.error("Error deleting pantry item: ", e);
         throw new Error("Could not delete pantry item.");
@@ -130,8 +131,8 @@ export const deletePantryItem = async (userId: string, itemId: string): Promise<
 
 export const getShoppingListItems = async (userId: string): Promise<ShoppingListItem[]> => {
     try {
-        const shoppingListCollection = collection(db, USERS_COLLECTION, userId, SHOPPING_LIST_SUBCOLLECTION);
-        const querySnapshot = await getDocs(shoppingListCollection);
+        const shoppingListCollection = db.collection(USERS_COLLECTION).doc(userId).collection(SHOPPING_LIST_SUBCOLLECTION);
+        const querySnapshot = await shoppingListCollection.get();
         return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ShoppingListItem));
     } catch (e) {
         console.error("Error getting shopping list items: ", e);
@@ -142,10 +143,10 @@ export const getShoppingListItems = async (userId: string): Promise<ShoppingList
 export const addShoppingListItems = async (userId: string, items: Omit<ShoppingListItem, 'id'>[]): Promise<void> => {
     if (items.length === 0) return;
     try {
-        const shoppingListCollection = collection(db, USERS_COLLECTION, userId, SHOPPING_LIST_SUBCOLLECTION);
-        const batch = writeBatch(db);
+        const shoppingListCollection = db.collection(USERS_COLLECTION).doc(userId).collection(SHOPPING_LIST_SUBCOLLECTION);
+        const batch = db.batch();
         items.forEach(item => {
-            const docRef = doc(shoppingListCollection);
+            const docRef = shoppingListCollection.doc();
             batch.set(docRef, item);
         });
         await batch.commit();
@@ -157,8 +158,8 @@ export const addShoppingListItems = async (userId: string, items: Omit<ShoppingL
 
 export const updateShoppingListItem = async (userId: string, itemId: string, isChecked: boolean): Promise<void> => {
     try {
-        const itemDocRef = doc(db, USERS_COLLECTION, userId, SHOPPING_LIST_SUBCOLLECTION, itemId);
-        await updateDoc(itemDocRef, { isChecked });
+        const itemDocRef = db.collection(USERS_COLLECTION).doc(userId).collection(SHOPPING_LIST_SUBCOLLECTION).doc(itemId);
+        await itemDocRef.update({ isChecked });
     } catch (e) {
         console.error("Error updating shopping list item: ", e);
         throw new Error("Could not update shopping list item.");
@@ -168,10 +169,10 @@ export const updateShoppingListItem = async (userId: string, itemId: string, isC
 export const deleteShoppingListItems = async (userId: string, itemIds: string[]): Promise<void> => {
      if (itemIds.length === 0) return;
     try {
-        const shoppingListCollection = collection(db, USERS_COLLECTION, userId, SHOPPING_LIST_SUBCOLLECTION);
-        const batch = writeBatch(db);
+        const shoppingListCollection = db.collection(USERS_COLLECTION).doc(userId).collection(SHOPPING_LIST_SUBCOLLECTION);
+        const batch = db.batch();
         itemIds.forEach(id => {
-            const docRef = doc(shoppingListCollection, id);
+            const docRef = shoppingListCollection.doc(id);
             batch.delete(docRef);
         });
         await batch.commit();
@@ -185,9 +186,9 @@ export const deleteShoppingListItems = async (userId: string, itemIds: string[])
 
 export const getMealPlan = async (userId: string): Promise<MealPlan> => {
     try {
-        const planDocRef = doc(db, USERS_COLLECTION, userId, RECIPES_SUBCOLLECTION, MEAL_PLAN_DOC_ID);
-        const docSnap = await getDoc(planDocRef);
-        return docSnap.exists() ? docSnap.data() as MealPlan : {};
+        const planDocRef = db.collection(USERS_COLLECTION).doc(userId).collection(RECIPES_SUBCOLLECTION).doc(MEAL_PLAN_DOC_ID);
+        const docSnap = await planDocRef.get();
+        return docSnap.exists ? docSnap.data() as MealPlan : {};
     } catch (e) {
         console.error("Error getting meal plan: ", e);
         throw new Error("Could not fetch meal plan.");
@@ -196,8 +197,8 @@ export const getMealPlan = async (userId: string): Promise<MealPlan> => {
 
 export const updateMealPlan = async (userId: string, mealPlan: MealPlan): Promise<void> => {
     try {
-        const planDocRef = doc(db, USERS_COLLECTION, userId, RECIPES_SUBCOLLECTION, MEAL_PLAN_DOC_ID);
-        await setDoc(planDocRef, mealPlan);
+        const planDocRef = db.collection(USERS_COLLECTION).doc(userId).collection(RECIPES_SUBCOLLECTION).doc(MEAL_PLAN_DOC_ID);
+        await planDocRef.set(mealPlan);
     } catch (e) {
         console.error("Error updating meal plan: ", e);
         throw new Error("Could not update meal plan.");
@@ -206,9 +207,9 @@ export const updateMealPlan = async (userId: string, mealPlan: MealPlan): Promis
 
 export const getTasteProfile = async (userId: string): Promise<TasteProfile> => {
     try {
-        const profileDocRef = doc(db, USERS_COLLECTION, userId, RECIPES_SUBCOLLECTION, TASTE_PROFILE_DOC_ID);
-        const docSnap = await getDoc(profileDocRef);
-        return docSnap.exists() ? docSnap.data() as TasteProfile : {};
+        const profileDocRef = db.collection(USERS_COLLECTION).doc(userId).collection(RECIPES_SUBCOLLECTION).doc(TASTE_PROFILE_DOC_ID);
+        const docSnap = await profileDocRef.get();
+        return docSnap.exists ? docSnap.data() as TasteProfile : {};
     } catch (e) {
         console.error("Error getting taste profile: ", e);
         throw new Error("Could not fetch taste profile.");
@@ -217,8 +218,8 @@ export const getTasteProfile = async (userId: string): Promise<TasteProfile> => 
 
 export const updateTasteProfile = async (userId: string, tasteProfile: TasteProfile): Promise<void> => {
     try {
-        const profileDocRef = doc(db, USERS_COLLECTION, userId, RECIPES_SUBCOLLECTION, TASTE_PROFILE_DOC_ID);
-        await setDoc(profileDocRef, tasteProfile);
+        const profileDocRef = db.collection(USERS_COLLECTION).doc(userId).collection(RECIPES_SUBCOLLECTION).doc(TASTE_PROFILE_DOC_ID);
+        await profileDocRef.set(tasteProfile);
     } catch (e) {
         console.error("Error updating taste profile: ", e);
         throw new Error("Could not update taste profile.");

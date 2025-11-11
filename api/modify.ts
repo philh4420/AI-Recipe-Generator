@@ -37,6 +37,17 @@ const recipeSchema = {
       },
       description: "Step-by-step instructions to prepare the dish."
     },
+    nutritionalInfo: {
+      type: Type.OBJECT,
+      description: "Estimated nutritional information per serving for the modified recipe.",
+      properties: {
+        calories: { type: Type.STRING, description: "Estimated calories, e.g., '450 kcal'." },
+        protein: { type: Type.STRING, description: "Estimated protein, e.g., '30g'." },
+        carbs: { type: Type.STRING, description: "Estimated carbohydrates, e.g., '25g'." },
+        fat: { type: Type.STRING, description: "Estimated fat, e.g., '15g'." }
+      },
+      required: ["calories", "protein", "carbs", "fat"]
+    },
     beveragePairing: {
       type: Type.OBJECT,
       description: "Suggestions for wine, beer, and non-alcoholic beverages that pair well with the dish.",
@@ -48,7 +59,7 @@ const recipeSchema = {
       required: ["wine", "beer", "nonAlcoholic"]
     }
   },
-  required: ["recipeName", "description", "prepTime", "cookTime", "ingredients", "instructions", "beveragePairing"],
+  required: ["recipeName", "description", "prepTime", "cookTime", "ingredients", "instructions", "nutritionalInfo", "beveragePairing"],
 };
 
 export default async function handler(
@@ -85,7 +96,7 @@ export default async function handler(
 
     Please generate a new version of this recipe that fits the modification request.
     The new recipe should have a slightly different, creative name to reflect the change. For example, if the original recipe is "Classic Chicken Soup" and the modification is "make it spicy", the new name could be "Spicy Chipotle Chicken Soup".
-    Also, provide new beverage pairings (wine, beer, non-alcoholic) that are suitable for this modified version.
+    Also, provide an estimated nutritional breakdown for the modified version and new beverage pairings (wine, beer, non-alcoholic) that are suitable for this modified version.
     Return the complete new recipe in the specified JSON format.
   `;
 

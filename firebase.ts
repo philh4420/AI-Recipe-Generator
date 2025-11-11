@@ -1,7 +1,9 @@
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
-import { getStorage } from "firebase/storage";
+// FIX: Switched to compat imports for all services to ensure consistency.
+import firebase from 'firebase/compat/app';
+import 'firebase/compat/firestore';
+import 'firebase/compat/auth';
+import 'firebase/compat/storage';
+
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -13,10 +15,10 @@ const firebaseConfig = {
   appId: "1:369899380214:web:6252f49912f4d4d90f7bd7"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase using the compat library
+const app = firebase.initializeApp(firebaseConfig);
 
-// Initialize Firestore, Auth, and Storage, and export the instances.
-export const db = getFirestore(app);
-export const auth = getAuth(app);
-export const storage = getStorage(app);
+// Initialize all services using the compat syntax
+export const db = firebase.firestore();
+export const auth = firebase.auth();
+export const storage = firebase.storage();

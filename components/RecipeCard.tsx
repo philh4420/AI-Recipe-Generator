@@ -214,7 +214,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ user, recipe, onSave, on
 
                 <p className="text-[--muted-foreground] mb-6">{currentRecipe.description}</p>
                 
-                <div className="flex flex-wrap gap-x-6 gap-y-3 mb-8 text-sm text-[--foreground]">
+                <div className="flex flex-wrap gap-x-6 gap-y-3 mb-6 text-sm text-[--foreground]">
                     <div className="flex items-center gap-2">
                         <ClockIcon className="h-5 w-5 text-[--primary]" aria-hidden="true" />
                         <div><span className="font-semibold">Prep:</span> {currentRecipe.prepTime}</div>
@@ -225,9 +225,32 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ user, recipe, onSave, on
                     </div>
                 </div>
 
+                {currentRecipe.nutritionalInfo && (
+                     <>
+                        <h3 className="text-base font-semibold text-[--foreground] mb-3">Nutrition Facts <span className="text-xs font-normal text-[--muted-foreground]">(per serving)</span></h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center mb-8 bg-[--muted]/30 p-4 rounded-lg border border-[--border]">
+                            <div>
+                                <p className="font-bold text-lg text-[--primary]">{currentRecipe.nutritionalInfo.calories}</p>
+                                <p className="text-xs text-[--muted-foreground]">Calories</p>
+                            </div>
+                            <div>
+                                <p className="font-bold text-lg text-[--primary]">{currentRecipe.nutritionalInfo.protein}</p>
+                                <p className="text-xs text-[--muted-foreground]">Protein</p>
+                            </div>
+                            <div>
+                                <p className="font-bold text-lg text-[--primary]">{currentRecipe.nutritionalInfo.carbs}</p>
+                                <p className="text-xs text-[--muted-foreground]">Carbs</p>
+                            </div>
+                            <div>
+                                <p className="font-bold text-lg text-[--primary]">{currentRecipe.nutritionalInfo.fat}</p>
+                                <p className="text-xs text-[--muted-foreground]">Fat</p>
+                            </div>
+                        </div>
+                    </>
+                )}
+
                 {currentRecipe.beveragePairing && (
                     <>
-                        <hr className="border-[--border] my-6" />
                         <Section title="Beverage Pairings">
                             <div className="space-y-3 text-sm">
                                 <div className="flex items-start gap-3">
@@ -253,11 +276,10 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ user, recipe, onSave, on
                                 </div>
                             </div>
                         </Section>
+                        <hr className="border-[--border] my-6" />
                     </>
                 )}
                 
-                <hr className="border-[--border] my-6" />
-
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     <div className="lg:col-span-4">
                         <Section 

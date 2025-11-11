@@ -66,7 +66,13 @@ const demoRecipe: Recipe = {
         "Rub the outside of the chicken with olive oil and season generously with salt and pepper.",
         "Place the chicken in a roasting pan and roast for 1 hour to 1 hour and 15 minutes, or until the juices run clear when a thigh is pierced.",
         "Let the chicken rest for 10-15 minutes before carving. Serve and enjoy!"
-    ]
+    ],
+    nutritionalInfo: {
+        calories: "550 kcal",
+        protein: "45g",
+        carbs: "5g",
+        fat: "38g"
+    }
 };
 
 const Section: React.FC<{ children: React.ReactNode; className?: string }> = ({ children, className }) => (
